@@ -5,17 +5,20 @@ import os
 path = "/home/zzz/workspace/src/ros_astra_camera/scripts"
 os.chdir(path)
 
-image_background_path = "./photos/Mario.jpg"
 #多尺度用conins2 多模板用coins
-image_search_path = "./photos/coins2.jpg"
+image_search_path = "./photos/muban/coins2.jpg"
+#背景
+image_background_path = "./photos/beijing/background.png"
+#多模板匹配文件夹
+folder_search_path = "./photos/muban"
 
 class Template:
 
     def __init__(self):
         pass
 
-
-    def find_best_results(self,image_background_path, image_search_path):
+    #单模板匹配
+    def find_one_results(self,image_background_path, image_search_path):
 
         
         image_background_rgb = cv2.imread(image_background_path)
@@ -38,6 +41,7 @@ class Template:
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
+    #单模板多次匹配
     def find_all_results(self,image_background_path, image_search_path):
 
         image_background_rgb = cv2.imread(image_background_path)
@@ -64,6 +68,7 @@ class Template:
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
+    #多尺度匹配
     def find_all_size_results(self,image_background_path, image_search_path,scales = None):
     
         image_background_rgb = cv2.imread(image_background_path)
@@ -98,6 +103,34 @@ class Template:
             
             cv2.destroyAllWindows()    
 
+    def find_more_results(self,image_background_path,folder_search_path):
+
+        image_background_rgb = cv2.imread(image_background_path)
+
+        image_background = cv2.cvtColor(image_background_rgb,cv2.COLOR_BGR2GRAY)
+
+        #加载所有模板
+        for filename in os.listdir(folder_search_path):
+
+            if filename.endswith('.jpg') or filename.endswith('.png'):
+
+                image_search = cv2.imread(folder_search_path + "/" + filename,0)
+
+                h,w = image_search.shape[:2]
+
+                res = self.findmatrix(image_background,image_search)
+
+                threshold = 0.8
+
+                loc = np.where(res >= threshold)
+
+                for pt in zip(*loc[::-1]):
+                    cv2.rectangle(image_background_rgb,pt,(pt[0]+w,pt[1]+h),(0,0,255),1)
+
+        cv2.imshow('results',image_background_rgb)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
     def findmatrix(self,image_background,image_search):
 
         return cv2.matchTemplate(image_background,image_search,cv2.TM_CCOEFF_NORMED)
@@ -110,4 +143,5 @@ if __name__ == '__main__':
     t = Template()
     #t.find_best_results(image_background_path, image_search_path)
     #t.find_all_results(image_background_path, image_search_path)
-    t.find_all_size_results(image_background_path, image_search_path)
+    #t.find_all_size_results(image_background_path, image_search_path)
+    t.find_more_results(image_background_path,folder_search_path)
